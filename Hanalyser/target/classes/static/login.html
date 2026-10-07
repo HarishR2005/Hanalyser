@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hanalyser - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/auth.css">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="noise"></div>
+
+    <div class="auth-wrapper">
+        <div class="brand-panel">
+            <div class="brand-inner">
+                <div class="logo-mark">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <polygon points="24,4 44,38 4,38" fill="none" stroke="#ffffff" stroke-width="2"/>
+                        <polygon points="24,12 38,36 10,36" fill="#ffffff" opacity="0.12"/>
+                        <line x1="24" y1="4" x2="24" y2="38" stroke="#ffffff" stroke-width="1.5" opacity="0.6"/>
+                        <circle cx="24" cy="24" r="3" fill="#ffffff"/>
+                    </svg>
+                </div>
+                <h1 class="brand-name">HANALYSER</h1>
+                <p class="brand-tagline">Intelligent Stock Valuation</p>
+                <div class="brand-features">
+                    <div class="feature-item"><span class="fi-dot buy"></span>Real-time Valuation Analysis</div>
+                    <div class="feature-item"><span class="fi-dot hold"></span>DCF & Graham Formula Engine</div>
+                    <div class="feature-item"><span class="fi-dot sell"></span>Risk-Adjusted Recommendations</div>
+                </div>
+                <div class="brand-disclaimer">
+                    Analysis only. Not a trading platform.
+                </div>
+            </div>
+        </div>
+
+        <div class="form-panel">
+            <div class="form-container">
+                <h2 class="form-title">Welcome back</h2>
+                <p class="form-subtitle">Sign in to your Hanalyser account</p>
+
+                <div id="errorAlert" class="alert alert-error" style="display:none"></div>
+                <div id="successAlert" class="alert alert-success" style="display:none"></div>
+
+                <!-- Login Form -->
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" id="email" class="form-input" placeholder="you@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="input-with-icon">
+                            <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+                            <button type="button" class="eye-toggle" onclick="togglePassword()">Show</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="loginBtn">
+                        <span class="btn-text">Sign In</span>
+                        <span class="btn-loader" style="display:none">⏳</span>
+                    </button>
+                </form>
+
+                <!-- OTP Form -->
+                <form id="otpForm" class="auth-form" style="display:none">
+                    <div class="otp-header">
+                        <div class="otp-icon">📧</div>
+                        <h3>Verify Your Email</h3>
+                        <p>Enter the 6-digit code sent to <strong id="otpEmail"></strong></p>
+                    </div>
+                    <div class="otp-inputs">
+                        <input type="text" maxlength="1" class="otp-box" data-index="0">
+                        <input type="text" maxlength="1" class="otp-box" data-index="1">
+                        <input type="text" maxlength="1" class="otp-box" data-index="2">
+                        <input type="text" maxlength="1" class="otp-box" data-index="3">
+                        <input type="text" maxlength="1" class="otp-box" data-index="4">
+                        <input type="text" maxlength="1" class="otp-box" data-index="5">
+                    </div>
+                    <button type="submit" class="btn-primary">Verify OTP</button>
+                    <button type="button" class="btn-ghost" onclick="resendOtp()">Resend OTP</button>
+                </form>
+
+                <div class="form-footer">
+                    Don't have an account? <a href="/register.html" class="link">Create one</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const otpForm = document.getElementById('otpForm');
+        let pendingEmail = '';
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            setLoading(true);
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Login failed');
+                if (data.requiresOtp) {
+                    pendingEmail = email;
+                    document.getElementById('otpEmail').textContent = email;
+                    loginForm.style.display = 'none';
+                    otpForm.style.display = 'block';
+                    showAlert('success', data.message);
+                } else {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userName', data.name);
+                    localStorage.setItem('userEmail', data.email);
+                    window.location.href = '/dashboard.html';
+                }
+            } catch (err) {
+                showAlert('error', err.message);
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        otpForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const otp = Array.from(document.querySelectorAll('.otp-box')).map(i => i.value).join('');
+            if (otp.length !== 6) { showAlert('error', 'Enter all 6 digits'); return; }
+            try {
+                const res = await fetch('/api/auth/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: pendingEmail, otp })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'OTP failed');
+                showAlert('success', data.message + ' Redirecting to login...');
+                setTimeout(() => { otpForm.style.display = 'none'; loginForm.style.display = 'block'; }, 2000);
+            } catch (err) {
+                showAlert('error', err.message);
+            }
+        });
+
+        async function resendOtp() {
+            try {
+                const res = await fetch('/api/auth/resend-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: pendingEmail })
+                });
+                const data = await res.json();
+                showAlert('success', data.message);
+            } catch(err) { showAlert('error', 'Failed to resend OTP'); }
+        }
+
+        function setLoading(loading) {
+            document.querySelector('.btn-text').style.display = loading ? 'none' : 'inline';
+            document.querySelector('.btn-loader').style.display = loading ? 'inline' : 'none';
+        }
+    </script>
+</body>
+</html>

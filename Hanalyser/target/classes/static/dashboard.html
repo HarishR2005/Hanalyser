@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hanalyser - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    <div class="bg-grid"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
+                <polygon points="24,4 44,38 4,38" fill="none" stroke="#ffffff" stroke-width="2"/>
+                <polygon points="24,12 38,36 10,36" fill="#ffffff" opacity="0.12"/>
+                <circle cx="24" cy="24" r="3" fill="#ffffff"/>
+            </svg>
+            <span class="logo-text">HANALYSER</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a class="nav-item active" onclick="showTab('dashboard')">
+                <span class="nav-icon">⬡</span> Dashboard
+            </a>
+            <a class="nav-item" onclick="showTab('analyze')">
+                <span class="nav-icon">◈</span> Analyze Stock
+            </a>
+            <a class="nav-item" onclick="showTab('watchlist')">
+                <span class="nav-icon">◎</span> Watchlist
+            </a>
+            <a class="nav-item" onclick="showTab('history')">
+                <span class="nav-icon">◷</span> History
+            </a>
+        </nav>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" id="userAvatar">A</div>
+            <div class="user-info">
+                <div class="user-name" id="sidebarName">Loading...</div>
+                <div class="user-role">Analyst</div>
+            </div>
+            <button class="logout-btn" onclick="logout()" title="Logout">⏻</button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                <div class="breadcrumb" id="breadcrumb">Dashboard</div>
+            </div>
+            <div class="topbar-right">
+                <div class="market-pulse">
+                    <span class="pulse-dot"></span>
+                    <span class="pulse-label">Market Analysis Live</span>
+                </div>
+                <div class="topbar-time" id="topbarTime"></div>
+            </div>
+        </header>
+
+        <!-- Dashboard Tab -->
+        <section class="tab-content active" id="tab-dashboard">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Welcome back, <span id="welcomeName">Analyst</span></h2>
+                    <p class="section-subtitle">Here's your valuation summary</p>
+                </div>
+                <button class="btn-analyze-quick" onclick="showTab('analyze')">+ Analyze Stock</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card-icon cyan">⬡</div>
+                    <div class="stat-card-body">
+                        <div class="stat-card-val" id="statTotal">0</div>
+                        <div class="stat-card-lbl">Total Analyses</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon green">▲</div>
+                    <div class="stat-card-body">
+                        <div class="stat-card-val" id="statBuy">0</div>
+                        <div class="stat-card-lbl">BUY Signals</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon yellow">◆</div>
+                    <div class="stat-card-body">
+                        <div class="stat-card-val" id="statHold">0</div>
+                        <div class="stat-card-lbl">HOLD Signals</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon red">▼</div>
+                    <div class="stat-card-body">
+                        <div class="stat-card-val" id="statSell">0</div>
+                        <div class="stat-card-lbl">SELL Signals</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Analyze & Recent -->
+            <div class="dashboard-grid">
+                <div class="card quick-analyze-card">
+                    <h3 class="card-title">Quick Analyze</h3>
+                    <p class="card-subtitle">Enter an Indian stock ticker for instant valuation</p>
+                    <div class="exchange-toggle compact" aria-label="Quick stock exchange">
+                        <button type="button" class="exchange-option active" data-exchange="NS" onclick="setExchange('NS')">NSE</button>
+                        <button type="button" class="exchange-option" data-exchange="BO" onclick="setExchange('BO')">BSE</button>
+                    </div>
+                    <div class="quick-search">
+                        <input type="text" id="quickTicker" class="quick-input" placeholder="e.g. TCS, INFY, RELIANCE" autocomplete="off">
+                        <button class="btn-go" onclick="quickAnalyze()">→</button>
+                    </div>
+                    <div class="suggested-tickers">
+                        <span class="ticker-chip" onclick="setQuickTicker('TCS')">TCS</span>
+                        <span class="ticker-chip" onclick="setQuickTicker('INFY')">INFY</span>
+                        <span class="ticker-chip" onclick="setQuickTicker('RELIANCE')">RELIANCE</span>
+                        <span class="ticker-chip" onclick="setQuickTicker('HDFCBANK')">HDFCBANK</span>
+                        <span class="ticker-chip" onclick="setQuickTicker('WIPRO')">WIPRO</span>
+                        <span class="ticker-chip" onclick="setQuickTicker('SBIN')">SBIN</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Recent Activity</h3>
+                    <div id="recentHistory" class="recent-list">
+                        <div class="empty-state">No analyses yet. Start analyzing stocks!</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analyze Tab -->
+        <section class="tab-content" id="tab-analyze">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Stock Analysis</h2>
+                    <p class="section-subtitle">Enter an Indian ticker and choose the exchange</p>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="analyze-search-bar">
+                <div class="exchange-toggle" aria-label="Stock exchange">
+                    <button type="button" class="exchange-option active" data-exchange="NS" onclick="setExchange('NS')">NSE</button>
+                    <button type="button" class="exchange-option" data-exchange="BO" onclick="setExchange('BO')">BSE</button>
+                </div>
+                <div class="search-wrapper">
+                    <span class="search-icon">◈</span>
+                    <input type="text" id="analyzeInput" class="analyze-input" placeholder="Enter ticker only (e.g. TCS, INFY, RELIANCE)" autocomplete="off">
+                    <button class="btn-analyze" id="analyzeBtn" onclick="analyzeStock()">
+                        <span id="analyzeBtnText">Analyze</span>
+                        <span id="analyzeBtnLoader" style="display:none">Analyzing...</span>
+                    </button>
+                </div>
+                <div id="analyzeError" class="analyze-error" style="display:none"></div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="analyzeLoading" class="loading-state" style="display:none">
+                <div class="loading-ring"></div>
+                <div class="loading-text">Fetching real-time data & running valuation models...</div>
+            </div>
+
+            <!-- Results -->
+            <div id="analysisResults" style="display:none">
+
+                <!-- Company Header -->
+                <div class="company-header card">
+                    <div class="company-main">
+                        <div class="company-ticker" id="rTicker">TCS</div>
+                        <div class="company-info">
+                            <div class="company-name" id="rCompanyName">Tata Consultancy Services</div>
+                            <div class="company-meta">
+                                <span id="rExchange" class="meta-tag">NSE</span>
+                                <span id="rCurrency" class="meta-tag">INR</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="company-price">
+                        <div class="price-main" id="rCurrentPrice">₹0</div>
+                        <div class="price-change" id="rPriceChange">—</div>
+                    </div>
+                    <div class="recommendation-badge" id="rBadge">BUY</div>
+                </div>
+
+                <!-- Key Metrics Row -->
+                <div class="metrics-row">
+                    <div class="metric-card">
+                        <div class="metric-label">Fair Value</div>
+                        <div class="metric-value cyan" id="rFairValue">₹0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Intrinsic Value</div>
+                        <div class="metric-value" id="rIntrinsicValue">₹0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Graham Value</div>
+                        <div class="metric-value" id="rGrahamValue">₹0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Margin of Safety</div>
+                        <div class="metric-value" id="rMOS">0%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">P/E Ratio</div>
+                        <div class="metric-value" id="rPE">0x</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">EPS</div>
+                        <div class="metric-value" id="rEPS">₹0</div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="charts-row">
+                    <!-- Pie Chart -->
+                    <div class="card chart-card">
+                        <h3 class="card-title">Signal Confidence</h3>
+                        <div class="pie-wrapper">
+                            <canvas id="confidenceChart" width="220" height="220"></canvas>
+                            <div class="pie-center">
+                                <div class="pie-pct" id="rConfidence">0%</div>
+                                <div class="pie-lbl">Confidence</div>
+                            </div>
+                        </div>
+                        <div class="pie-legend">
+                            <div class="legend-item"><span class="leg-dot buy"></span> BUY <span class="leg-val" id="legBuy">0%</span></div>
+                            <div class="legend-item"><span class="leg-dot hold"></span> HOLD <span class="leg-val" id="legHold">0%</span></div>
+                            <div class="legend-item"><span class="leg-dot sell"></span> SELL <span class="leg-val" id="legSell">0%</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Valuation Bar Chart -->
+                    <div class="card chart-card wide">
+                        <h3 class="card-title">Valuation Comparison</h3>
+                        <canvas id="valuationChart" height="200"></canvas>
+                    </div>
+
+                    <!-- Risk Meter -->
+                    <div class="card chart-card">
+                        <h3 class="card-title">Risk Meter</h3>
+                        <div class="risk-meter-wrapper">
+                            <canvas id="riskChart" width="220" height="130"></canvas>
+                            <div class="risk-needle" id="riskNeedle"></div>
+                        </div>
+                        <div class="risk-info">
+                            <div class="risk-score" id="rRiskScore">0/10</div>
+                            <div class="risk-level" id="rRiskLevel">—</div>
+                        </div>
+                        <div class="risk-labels">
+                            <span class="rl low">Low</span>
+                            <span class="rl med">Medium</span>
+                            <span class="rl high">High</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommendation Panel -->
+                <div class="recommendation-panel card" id="recPanel">
+                    <div class="rec-header">
+                        <div>
+                            <div class="rec-label">RECOMMENDATION</div>
+                            <div class="rec-action" id="recAction">BUY</div>
+                        </div>
+                        <div class="rec-valuation" id="recValuation">UNDERVALUED</div>
+                    </div>
+                    <div class="rec-prices">
+                        <div class="rec-price-item buy-col" id="buyBelowBlock">
+                            <div class="rec-price-label">Buy Below</div>
+                            <div class="rec-price-val" id="rBuyBelow">₹0</div>
+                        </div>
+                        <div class="rec-price-item hold-col" id="holdUntilBlock">
+                            <div class="rec-price-label">Hold Until</div>
+                            <div class="rec-price-val" id="rHoldUntil">₹0</div>
+                        </div>
+                        <div class="rec-price-item sell-col" id="sellAboveBlock">
+                            <div class="rec-price-label">Sell Above</div>
+                            <div class="rec-price-val" id="rSellAbove">₹0</div>
+                        </div>
+                    </div>
+                    <div class="rec-summary" id="rSummary"></div>
+                </div>
+
+                <!-- Fundamental Table -->
+                <div class="card">
+                    <h3 class="card-title">Fundamental Data</h3>
+                    <div class="fundamentals-grid">
+                        <div class="fund-item"><span class="fund-key">Market Cap</span><span class="fund-val" id="fMarketCap">—</span></div>
+                        <div class="fund-item"><span class="fund-key">Volume</span><span class="fund-val" id="fVolume">—</span></div>
+                        <div class="fund-item"><span class="fund-key">52W High</span><span class="fund-val" id="f52High">—</span></div>
+                        <div class="fund-item"><span class="fund-key">52W Low</span><span class="fund-val" id="f52Low">—</span></div>
+                        <div class="fund-item"><span class="fund-key">Beta</span><span class="fund-val" id="fBeta">—</span></div>
+                        <div class="fund-item"><span class="fund-key">P/B Ratio</span><span class="fund-val" id="fPB">—</span></div>
+                        <div class="fund-item"><span class="fund-key">Div Yield</span><span class="fund-val" id="fDivYield">—</span></div>
+                        <div class="fund-item"><span class="fund-key">Debt/Equity</span><span class="fund-val" id="fDE">—</span></div>
+                        <div class="fund-item"><span class="fund-key">Rev Growth</span><span class="fund-val" id="fRevGrowth">—</span></div>
+                        <div class="fund-item"><span class="fund-key">EPS Growth</span><span class="fund-val" id="fEPSGrowth">—</span></div>
+                        <div class="fund-item"><span class="fund-key">Forward P/E</span><span class="fund-val" id="fForwardPE">—</span></div>
+                        <div class="fund-item"><span class="fund-key">Day Range</span><span class="fund-val" id="fDayRange">—</span></div>
+                    </div>
+                </div>
+
+                <!-- Add to Watchlist -->
+                <div class="watchlist-action">
+                    <button class="btn-watchlist" id="watchlistBtn" onclick="addCurrentToWatchlist()">
+                        + Add to Watchlist
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Watchlist Tab -->
+        <section class="tab-content" id="tab-watchlist">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">My Watchlist</h2>
+                    <p class="section-subtitle">Track stocks for analysis</p>
+                </div>
+            </div>
+            <div id="watchlistContent" class="watchlist-grid">
+                <div class="empty-state card">No stocks in watchlist yet. Analyze a stock and add it here.</div>
+            </div>
+        </section>
+
+        <!-- History Tab -->
+        <section class="tab-content" id="tab-history">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Analysis History</h2>
+                    <p class="section-subtitle">Your past valuations</p>
+                </div>
+            </div>
+            <div id="historyContent" class="history-table-wrapper">
+                <div class="empty-state card">No history yet.</div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/js/dashboard.js?v=hanalyser-2"></script>
+</body>
+</html>

@@ -25,3 +25,9 @@ replay_pid*
 
 # Secret properties files
 application-secret.properties
+# Build target folder
+target/
+
+# IntelliJ IDEA files
+.idea/
+*.iml
